@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
 import './CharPicker.css';
+import { useHttp } from '../hooks/http';
 
 const CharPicker = props => {
-  const [loadedChars, setLoadedChars] = useState([]);
+  // const [loadedChars, setLoadedChars] = useState([]);
 
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
 
   //state = { characters: [], isLoading: false };
 
@@ -21,32 +22,24 @@ const CharPicker = props => {
   // 10- if we pass [] then we dont want to code inside to re-run again
   // 11- hence useEffect with [] as second argument is equavalent to componentDidMount
 
-  useEffect(() => {
-    setIsLoading(true);
-    console.log('it works');
-    fetch('https://swapi.co/api/people')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch.');
-        }
-        return response.json();
-      })
-      .then(charData => {
-        const selectedCharacters = charData.results.slice(0, 5);
+  // hey NEW STUFF again!!!
+  // now we are using custom hooks inside useEffect. so now more rules to follow.
+  // you always must call hooks on the top level of the component function.
+  // we cant use it inside a nested function or we cant use it inside a if loop or for loop
 
-        setIsLoading(false);
-        setLoadedChars(
-          selectedCharacters.map((char, index) => ({
-            name: char.name,
-            id: index + 1
-          }))
-        );
-      })
-      .catch(err => {
-        console.log(err);
-        setIsLoading(true);
-      });
-  }, []);
+  const [isLoading, fetchedData] = useHttp('https://swapi.co/api/people', []);
+
+  const selectedCharacters = fetchedData
+    ? fetchedData.results.slice(0, 5).map((char, index) => ({
+        name: char.name,
+        id: index + 1
+      }))
+    : [];
+
+  // this is not required here now since we wrote a custom hook which will take care of this
+  // useEffect(() => {
+  //   // setIsLoading(true);
+  // }, []);
 
   // componentDidMount() {
   //   this.setState({ isLoading: true });
@@ -74,21 +67,24 @@ const CharPicker = props => {
 
   let content = <p>Loading characters...</p>;
 
-  if (!isLoading && loadedChars && loadedChars.length > 0) {
+  if (!isLoading && selectedCharacters && selectedCharacters.length > 0) {
     content = (
       <select
         onChange={props.onCharSelect}
         value={props.selectedChar}
         className={props.side}
       >
-        {loadedChars.map(char => (
+        {selectedCharacters.map(char => (
           <option key={char.id} value={char.id}>
             {char.name}
           </option>
         ))}
       </select>
     );
-  } else if (!isLoading && (!loadedChars || loadedChars.length === 0)) {
+  } else if (
+    !isLoading &&
+    (!selectedCharacters || selectedCharacters.length === 0)
+  ) {
     content = <p>Could not fetch any data.</p>;
   }
   return content;

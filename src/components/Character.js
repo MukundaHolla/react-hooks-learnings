@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
 import Summary from './Summary';
-import { ReactComponent } from '*.svg';
+import { useHttp } from '../hooks/http';
 
 const Character = props => {
   //state = { loadedCharacter: {}, isLoading: false };
 
-  const [loadedCharacter, setLoadedCharacter] = useState({});
+  //const [loadedCharacter, setLoadedCharacter] = useState({});
 
-  const [isLoading, setIsLoading] = useState(false);
-
-  console.log('Rendering..');
+  //const [isLoading, setIsLoading] = useState(false);
 
   // shouldComponentUpdate(nextProps, nextState) {
   //   console.log('shouldComponentUpdate');
@@ -21,40 +19,62 @@ const Character = props => {
   //   );
   // }
 
-  const fetchData = () => {
-    console.log(
-      'Sending Http request for new character with id ' + props.selectedChar
-    );
-    setIsLoading(true);
-    // this.setState({ isLoading: true });
-    fetch('https://swapi.co/api/people/' + props.selectedChar)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Could not fetch person!');
-        }
-        return response.json();
-      })
-      .then(charData => {
-        const loadedCharacter = {
-          id: props.selectedChar,
-          name: charData.name,
-          height: charData.height,
-          colors: {
-            hair: charData.hair_color,
-            skin: charData.skin_color
-          },
-          gender: charData.gender,
-          movieCount: charData.films.length
-        };
-        setIsLoading(false);
-        setLoadedCharacter(loadedCharacter);
-        // this.setState({ loadedCharacter: loadedCharacter, isLoading: false });
-      })
-      .catch(err => {
-        console.log(err);
-        setIsLoading(false);
-      });
-  };
+  const [isLoading, fetchData] = useHttp(
+    'https://swapi.co/api/people/' + props.selectedChar,
+    [props.selectedChar]
+  );
+  let loadedCharacter = null;
+  if (fetchData) {
+    loadedCharacter = {
+      id: props.selectedChar,
+      name: fetchData.name,
+      height: fetchData.height,
+      colors: {
+        hair: fetchData.hair_color,
+        skin: fetchData.skin_color
+      },
+      gender: fetchData.gender,
+      movieCount: fetchData.films.length
+    };
+  }
+
+  // setIsLoading(false);
+  // setLoadedCharacter(loadedCharacter)
+
+  // const fetchData = () => {
+  //   console.log(
+  //     'Sending Http request for new character with id ' + props.selectedChar
+  //   );
+  //   setIsLoading(true);
+  //   // this.setState({ isLoading: true });
+  //   fetch('https://swapi.co/api/people/' + props.selectedChar)
+  //     .then(response => {
+  //       if (!response.ok) {
+  //         throw new Error('Could not fetch person!');
+  //       }
+  //       return response.json();
+  //     })
+  //     .then(charData => {
+  //       const loadedCharacter = {
+  //         id: props.selectedChar,
+  //         name: charData.name,
+  //         height: charData.height,
+  //         colors: {
+  //           hair: charData.hair_color,
+  //           skin: charData.skin_color
+  //         },
+  //         gender: charData.gender,
+  //         movieCount: charData.films.length
+  //       };
+  //       setIsLoading(false);
+  //       setLoadedCharacter(loadedCharacter);
+  //       // this.setState({ loadedCharacter: loadedCharacter, isLoading: false });
+  //     })
+  //     .catch(err => {
+  //       console.log(err);
+  //       setIsLoading(false);
+  //     });
+  // };
 
   // why sending array param?
   // because i want to re-run when selectedChar dropdown value changes.
@@ -68,12 +88,12 @@ const Character = props => {
   // but how do we handle shouldComponentUpdate() work using hooks?
   // ANSWER => USE React.memo()
 
-  useEffect(() => {
-    fetchData();
-    return () => {
-      console.log('Cleaning up ..');
-    };
-  }, [props.selectedChar]);
+  // useEffect(() => {
+  //   fetchData();
+  //   return () => {
+  //     console.log('Cleaning up ..');
+  //   };
+  // }, [props.selectedChar]);
 
   // Soooooo here's a new stuff
   // when you want to run clean-up only once when component will unmount. we can have another useEffect with empty return and empty second argument
@@ -101,7 +121,7 @@ const Character = props => {
 
   let content = <p>Loading Character...</p>;
 
-  if (!isLoading && loadedCharacter.id) {
+  if (!isLoading && loadedCharacter) {
     content = (
       <Summary
         name={loadedCharacter.name}
@@ -112,7 +132,7 @@ const Character = props => {
         movieCount={loadedCharacter.movieCount}
       />
     );
-  } else if (!isLoading && !loadedCharacter.id) {
+  } else if (!isLoading && !loadedCharacter) {
     content = <p>Failed to fetch character.</p>;
   }
   return content;
